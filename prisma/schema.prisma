@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  scans     Scan[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Scan {
+  id                 String      @id @default(cuid())
+  url                String
+  domain             String
+  status             ScanStatus  @default(PENDING)
+  progress           Int         @default(0)
+  currentStep        String?
+  websiteTitle       String?
+  websiteDescription String?
+  industry           String?
+  keywords           String[]    @default([])
+  overallScore       Float?
+  userId             String?
+  user               User?       @relation(fields: [userId], references: [id])
+  queries            Query[]
+  platformResults    PlatformResult[]
+  errorMessage       String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([domain])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ScanStatus {
+  PENDING
+  SCRAPING
+  GENERATING_QUERIES
+  QUERYING_PLATFORMS
+  ANALYZING
+  COMPLETED
+  FAILED
+}
+
+model Query {
+  id          String             @id @default(cuid())
+  scanId      String
+  scan        Scan               @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  text        String
+  keyword     String
+  region      String
+  regionLabel String
+  category    String?
+  responses   PlatformResponse[]
+  createdAt   DateTime           @default(now())
+
+  @@index([scanId])
+}
+
+model PlatformResult {
+  id            String     @id @default(cuid())
+  scanId        String
+  scan          Scan       @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  platform      AIPlatform
+  score         Float
+  totalQueries  Int
+  mentionCount  Int
+  citationCount Int
+  createdAt     DateTime   @default(now())
+
+  @@unique([scanId, platform])
+  @@index([scanId])
+}
+
+enum AIPlatform {
+  OPENAI
+  ANTHROPIC
+  GEMINI
+  PERPLEXITY
+}
+
+model PlatformResponse {
+  id             String       @id @default(cuid())
+  queryId        String
+  query          Query        @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  platform       AIPlatform
+  responseText   String
+  mentioned      Boolean      @default(false)
+  mentionType    MentionType?
+  mentionExcerpt String?
+  citationUrl    String?
+  confidence     Float?
+  rawResponse    Json?
+  tokensUsed     Int?
+  latencyMs      Int?
+  createdAt      DateTime     @default(now())
+
+  @@index([queryId])
+  @@index([platform])
+}
+
+enum MentionType {
+  DIRECT_CITATION
+  BRAND_MENTION
+  RECOMMENDATION
+  PASSING_REFERENCE
+  NOT_MENTIONED
+}
