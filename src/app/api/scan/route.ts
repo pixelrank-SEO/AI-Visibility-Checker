@@ -18,10 +18,10 @@ export async function POST(request: Request) {
     const url = normalizeUrl(rawUrl);
     const domain = extractDomain(url);
 
-    const validRegionCodes = REGIONS.map((r) => r.code);
+    const validRegionCodes = REGIONS.map((r) => r.code) as string[];
     const selectedRegions = regions
       ? regions.filter((r) => validRegionCodes.includes(r))
-      : REGIONS.slice(0, 5).map((r) => r.code);
+      : REGIONS.slice(0, 5).map((r) => r.code as string);
 
     if (selectedRegions.length === 0) {
       return NextResponse.json(
