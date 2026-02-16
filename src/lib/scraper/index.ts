@@ -6,7 +6,7 @@ import { extractDomain } from "@/lib/utils";
 
 export async function scrapeWebsite(url: string): Promise<ScrapedData> {
   const response = await axios.get(url, {
-    timeout: 15000,
+    timeout: 30000,
     maxRedirects: 5,
     headers: {
       "User-Agent":

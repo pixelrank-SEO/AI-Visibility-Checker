@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { normalizeUrl, extractDomain } from "@/lib/utils";
 import { runScanEngine } from "@/lib/scan-engine";
 import { REGIONS } from "@/lib/constants";
+
+export const maxDuration = 300;
 
 const createScanSchema = z.object({
   url: z.string().min(1, "URL is required"),
@@ -40,9 +43,13 @@ export async function POST(request: Request) {
       },
     });
 
-    // Fire and forget - scan runs in background
-    runScanEngine(scan.id).catch((error) => {
-      console.error("Scan engine error:", error);
+    // Run scan in background using Next.js after() API
+    after(async () => {
+      try {
+        await runScanEngine(scan.id);
+      } catch (error) {
+        console.error("Scan engine error:", error);
+      }
     });
 
     return NextResponse.json(
