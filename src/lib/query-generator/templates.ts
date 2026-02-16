@@ -6,6 +6,37 @@ export interface QueryTemplate {
 }
 
 export const QUERY_TEMPLATES: QueryTemplate[] = [
+  // Brand-specific queries (prioritized first so they always get included)
+  {
+    template: "What do you know about {domain}?",
+    category: "brand_awareness",
+    requiresKeyword: false,
+    requiresDomain: true,
+  },
+  {
+    template: "Tell me about {domain} and what services they offer {region}",
+    category: "brand_awareness",
+    requiresKeyword: false,
+    requiresDomain: true,
+  },
+  {
+    template: "Is {domain} a good choice for {keyword} {region}?",
+    category: "brand_evaluation",
+    requiresKeyword: true,
+    requiresDomain: true,
+  },
+  {
+    template: "{domain} review - is it a reliable {keyword} provider {region}?",
+    category: "brand_evaluation",
+    requiresKeyword: true,
+    requiresDomain: true,
+  },
+  {
+    template: "Compare {domain} with other {keyword} providers {region}",
+    category: "brand_comparison",
+    requiresKeyword: true,
+    requiresDomain: true,
+  },
   // Recommendation queries
   {
     template: "What are the best {keyword} companies {region}?",
@@ -24,19 +55,6 @@ export const QUERY_TEMPLATES: QueryTemplate[] = [
     category: "recommendation",
     requiresKeyword: true,
     requiresDomain: false,
-  },
-  // Informational queries
-  {
-    template: "What do you know about {domain}?",
-    category: "brand_awareness",
-    requiresKeyword: false,
-    requiresDomain: true,
-  },
-  {
-    template: "Is {domain} a good choice for {keyword}?",
-    category: "brand_evaluation",
-    requiresKeyword: true,
-    requiresDomain: true,
   },
   // Problem-solving queries
   {

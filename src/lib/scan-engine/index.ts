@@ -86,7 +86,7 @@ export async function runScanEngine(scanId: string): Promise<void> {
               responseText: result.text,
               tokensUsed: result.tokensUsed,
               latencyMs: result.latencyMs,
-              rawResponse: JSON.parse(JSON.stringify(result.raw)),
+              rawResponse: JSON.parse(JSON.stringify({ ...result.raw, citations: result.citations })),
             },
           });
         } catch (error) {
@@ -132,15 +132,14 @@ export async function runScanEngine(scanId: string): Promise<void> {
     for (const response of allResponses) {
       if (response.responseText.startsWith("Error:")) continue;
 
-      // Parse citations from raw response if available
-      const rawCitations: string[] = [];
-      // The citations are extracted during the platform query step
-      // For analysis, we detect mentions in the text itself
+      // Extract citations stored during platform query step
+      const raw = response.rawResponse as Record<string, unknown> | null;
+      const citations = Array.isArray(raw?.citations) ? (raw.citations as string[]) : [];
       const analysis = detectMention(
         response.responseText,
         scan.url,
         scan.domain,
-        rawCitations
+        citations
       );
 
       await db.platformResponse.update({
