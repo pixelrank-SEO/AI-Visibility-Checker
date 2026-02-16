@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   return (
@@ -16,6 +17,7 @@ export function Header() {
           >
             History
           </Link>
+          <ThemeToggle />
         </nav>
       </div>
     </header>
