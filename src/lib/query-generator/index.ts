@@ -5,13 +5,16 @@ import type { GeneratedQuery } from "./types";
 
 export function generateQueries(
   scrapedData: ScrapedData,
-  maxQueriesPerRegion: number = 10
+  maxQueriesPerRegion: number = 10,
+  selectedRegionCodes?: string[]
 ): GeneratedQuery[] {
   const queries: GeneratedQuery[] = [];
   const topKeywords = scrapedData.keywords.slice(0, 5);
 
-  // Use a subset of regions: global + 4 key regions to keep API costs manageable
-  const activeRegions = REGIONS.slice(0, 5);
+  // Use selected regions or default to first 5
+  const activeRegions = selectedRegionCodes
+    ? REGIONS.filter((r) => selectedRegionCodes.includes(r.code))
+    : REGIONS.slice(0, 5);
 
   for (const region of activeRegions) {
     let regionQueryCount = 0;

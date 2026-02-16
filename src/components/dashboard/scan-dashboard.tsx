@@ -5,6 +5,7 @@ import { PlatformBreakdown } from "./platform-breakdown";
 import { RegionalHeatmap } from "./regional-heatmap";
 import { KeywordMentionsTable } from "./keyword-mentions-table";
 import { CitationDetails } from "./citation-details";
+import { ContentOpportunities } from "./content-opportunities";
 import { PlatformBarChart } from "@/components/charts/platform-bar-chart";
 import { KeywordFrequencyChart } from "@/components/charts/keyword-frequency-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -78,6 +79,7 @@ export function ScanDashboard({ scan }: ScanDashboardProps) {
           <TabsTrigger value="keywords">Keywords</TabsTrigger>
           <TabsTrigger value="regions">Regions</TabsTrigger>
           <TabsTrigger value="citations">Citations</TabsTrigger>
+          <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
@@ -88,7 +90,11 @@ export function ScanDashboard({ scan }: ScanDashboardProps) {
         </TabsContent>
 
         <TabsContent value="keywords" className="mt-6">
-          <KeywordMentionsTable queries={scan.queries} />
+          <KeywordMentionsTable
+            queries={scan.queries}
+            scrapedKeywords={scan.keywords}
+            domain={scan.domain}
+          />
         </TabsContent>
 
         <TabsContent value="regions" className="mt-6">
@@ -97,6 +103,14 @@ export function ScanDashboard({ scan }: ScanDashboardProps) {
 
         <TabsContent value="citations" className="mt-6">
           <CitationDetails queries={scan.queries} />
+        </TabsContent>
+
+        <TabsContent value="opportunities" className="mt-6">
+          <ContentOpportunities
+            queries={scan.queries}
+            domain={scan.domain}
+            scrapedKeywords={scan.keywords}
+          />
         </TabsContent>
       </Tabs>
     </div>

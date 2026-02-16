@@ -42,7 +42,8 @@ export async function runScanEngine(scanId: string): Promise<void> {
 
     // Step 2: Generate queries
     await updateProgress(scanId, "GENERATING_QUERIES", 15, "Generating search queries...");
-    const generatedQueries = generateQueries(scrapedData);
+    const selectedRegions = scan.selectedRegions.length > 0 ? scan.selectedRegions : undefined;
+    const generatedQueries = generateQueries(scrapedData, 10, selectedRegions);
 
     if (generatedQueries.length === 0) {
       throw new Error("Could not generate any queries from website content");

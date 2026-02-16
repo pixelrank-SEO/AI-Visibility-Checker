@@ -3,18 +3,32 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { normalizeUrl, extractDomain } from "@/lib/utils";
 import { runScanEngine } from "@/lib/scan-engine";
+import { REGIONS } from "@/lib/constants";
 
 const createScanSchema = z.object({
   url: z.string().min(1, "URL is required"),
+  regions: z.array(z.string()).min(1).max(10).optional(),
 });
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { url: rawUrl } = createScanSchema.parse(body);
+    const { url: rawUrl, regions } = createScanSchema.parse(body);
 
     const url = normalizeUrl(rawUrl);
     const domain = extractDomain(url);
+
+    const validRegionCodes = REGIONS.map((r) => r.code);
+    const selectedRegions = regions
+      ? regions.filter((r) => validRegionCodes.includes(r))
+      : REGIONS.slice(0, 5).map((r) => r.code);
+
+    if (selectedRegions.length === 0) {
+      return NextResponse.json(
+        { error: "At least one valid region is required" },
+        { status: 400 }
+      );
+    }
 
     const scan = await db.scan.create({
       data: {
@@ -22,6 +36,7 @@ export async function POST(request: Request) {
         domain,
         status: "PENDING",
         progress: 0,
+        selectedRegions,
       },
     });
 

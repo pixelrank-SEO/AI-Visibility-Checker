@@ -27,6 +27,7 @@ model Scan {
   websiteDescription String?
   industry           String?
   keywords           String[]    @default([])
+  selectedRegions    String[]    @default([])
   overallScore       Float?
   userId             String?
   user               User?       @relation(fields: [userId], references: [id])

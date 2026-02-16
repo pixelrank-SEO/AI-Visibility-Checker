@@ -8,7 +8,6 @@ interface ExtractedData {
 
 /**
  * Extracts keywords using word frequency analysis from the parsed HTML.
- * This is the fallback when no AI API is configured.
  */
 export function extractKeywordsFromContent(parsed: ParsedHtml, domain: string): ExtractedData {
   const allText = [
@@ -20,7 +19,6 @@ export function extractKeywordsFromContent(parsed: ParsedHtml, domain: string): 
     .join(" ")
     .toLowerCase();
 
-  // Common stop words to filter out
   const stopWords = new Set([
     "the", "be", "to", "of", "and", "a", "in", "that", "have", "i",
     "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
@@ -42,6 +40,10 @@ export function extractKeywordsFromContent(parsed: ParsedHtml, domain: string): 
     "learn", "more", "view", "see", "privacy", "policy", "terms",
     "cookie", "cookies", "accept", "close", "search", "sign",
     "login", "register", "subscribe", "share", "follow",
+    // Web-specific filler words
+    "get", "started", "free", "best", "great", "top", "start",
+    "today", "right", "need", "help", "find", "discover", "explore",
+    "join", "try", "request", "demo", "download", "watch",
   ]);
 
   // Extract words, filter stop words, count frequency
@@ -54,32 +56,56 @@ export function extractKeywordsFromContent(parsed: ParsedHtml, domain: string): 
     }
   }
 
-  // Extract 2-word phrases from headings and description
+  // Extract 2-word phrases from headings and description SEPARATELY
+  // Process each source independently to avoid cross-boundary bigrams
   const phrases: string[] = [];
-  const phraseSource = [parsed.title, parsed.description, ...parsed.headings].join(". ");
-  const phraseWords = phraseSource.toLowerCase().split(/\s+/);
-  for (let i = 0; i < phraseWords.length - 1; i++) {
-    const w1 = phraseWords[i].replace(/[^a-z]/g, "");
-    const w2 = phraseWords[i + 1].replace(/[^a-z]/g, "");
-    if (w1.length > 2 && w2.length > 2 && !stopWords.has(w1) && !stopWords.has(w2)) {
-      phrases.push(`${w1} ${w2}`);
+  const phraseSources = [parsed.title, parsed.description, ...parsed.headings];
+
+  for (const source of phraseSources) {
+    if (!source) continue;
+    const phraseWords = source.toLowerCase().split(/\s+/);
+    for (let i = 0; i < phraseWords.length - 1; i++) {
+      const w1 = phraseWords[i].replace(/[^a-z]/g, "");
+      const w2 = phraseWords[i + 1].replace(/[^a-z]/g, "");
+      if (w1.length > 2 && w2.length > 2 && !stopWords.has(w1) && !stopWords.has(w2)) {
+        const bigram = `${w1} ${w2}`;
+        // Only keep if the bigram also appears in the body text
+        if (allText.includes(bigram)) {
+          phrases.push(bigram);
+        }
+      }
     }
   }
 
-  // Sort by frequency and take top keywords
+  // Deduplicate phrases
+  const uniquePhrases = [...new Set(phrases)];
+
+  // Sort single words by frequency, take top ones
   const sortedWords = Array.from(wordCount.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 15)
     .map(([word]) => word);
 
-  // Combine single words and phrases, deduplicate
-  const allKeywords = [...new Set([...parsed.metaKeywords.map(k => k.toLowerCase()), ...phrases, ...sortedWords])];
+  // Combine: meta keywords first, then phrases, then single words
+  const allKeywords = [...new Set([
+    ...parsed.metaKeywords.map((k) => k.toLowerCase()),
+    ...uniquePhrases,
+    ...sortedWords,
+  ])];
+
+  // Guarantee minimum 5 keywords
   const keywords = allKeywords.slice(0, 20);
+  if (keywords.length < 5) {
+    // Pad with additional single-word keywords
+    for (const [word] of Array.from(wordCount.entries()).sort((a, b) => b[1] - a[1])) {
+      if (keywords.length >= 5) break;
+      if (!keywords.includes(word)) {
+        keywords.push(word);
+      }
+    }
+  }
 
-  // Simple industry inference from keywords and title
   const industry = inferIndustry(allText);
-
-  // Services from headings
   const services = parsed.headings
     .filter((h) => h.length > 5 && h.length < 100)
     .slice(0, 10);
@@ -100,6 +126,9 @@ function inferIndustry(text: string): string {
     ["Consulting", ["consulting", "consultant", "advisory", "strategy", "management"]],
     ["Design", ["design", "creative", "branding", "graphic", "ui", "ux"]],
     ["SaaS", ["saas", "platform", "tool", "subscription", "dashboard", "analytics"]],
+    ["Construction", ["construction", "building", "crane", "excavation", "civil", "contractor"]],
+    ["Legal", ["law", "legal", "attorney", "lawyer", "court", "litigation"]],
+    ["Food & Hospitality", ["restaurant", "food", "catering", "hotel", "hospitality", "dining"]],
     ["Agency", ["agency", "services", "solutions", "partner", "client"]],
   ];
 
